@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -20,9 +21,17 @@ namespace MTools.Http
     {
         private string baseAddress;
 
-        public HttpProxy(string ip, int port)
+        public HttpProxy(string ip, int port,bool https=false)
         {
-            this.baseAddress = String.Format("http://{0}:{1}/", ip, port);
+            if (https)
+            {
+                this.baseAddress = String.Format("https://{0}:{1}/", ip, port);
+            }
+            else
+            {
+                this.baseAddress = String.Format("http://{0}:{1}/", ip, port);
+            }
+           
         }
 
         public  Task<MResult<T>> PostMessage<T>(string url, object? message)
@@ -48,9 +57,14 @@ namespace MTools.Http
         private async Task<MResult<T>> Request<T>(string url,object? message,RequestMethod requestMethod)
         {
             MResult<T> mResult = new MResult<T>();
-            HttpClient client = new HttpClient();
+
+            var handler = new HttpClientHandler();
+            handler.ClientCertificateOptions = ClientCertificateOption.Automatic;
+            handler.ServerCertificateCustomValidationCallback+= (message, certificate2, arg3, arg4) => true;
+            HttpClient client = new HttpClient(handler);
             try
             {
+               
                 HttpContent? httpContent = null;
                 HttpResponseMessage? httpResponseMessage = null;
                 if (url.FirstOrDefault() == '/')
